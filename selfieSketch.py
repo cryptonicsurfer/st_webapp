@@ -3,11 +3,12 @@ import cv2
 import numpy as np
 from PIL import Image
 import tempfile
+import io
 
 st.set_page_config(page_title="Selfie on the fly", layout="wide")
 
 st.title("*Need a quick selfie* while on your laptop? :sunglasses:")
-st.subheader("*sometimes you just need that mug shot for creating your profile on the fly...*:smiley:")
+st.subheader("*Sometimes you just need that mug shot for creating your profile on the fly...*:smiley:")
 
 def lineApp(img, lower, upper, line_color, bg_color):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -33,7 +34,12 @@ else:
                """)
 
 if selfie is not None:
-    col2.download_button("download your selfie", selfie)
+    #col2.image(selfie)
+    selfie_pil = Image.open(selfie).convert('RGB')
+    selfie_bytes = io.BytesIO()
+    selfie_pil.save(selfie_bytes, format="PNG")
+    selfie_bytes.seek(0)
+    col2.download_button("download your selfie", selfie_bytes, "selfie.png")
 else:
     col2.download_button("take a selfie and click download", data="", disabled=True)
 
@@ -49,10 +55,12 @@ if selfie is not None:
     result = lineApp(img, lower_threshold, upper_threshold, tuple(int(line_color.lstrip("#")[i:i+2], 16) for i in (0, 2, 4)), tuple(int(bg_color.lstrip("#")[i:i+2], 16) for i in (0, 2, 4)))
     col4.image(result, caption="Line Drawing", use_column_width=True)
 
-    if col4.button("Download Line Drawing"):
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-        cv2.imwrite(temp_file.name, result)
-        col4.markdown(f"[Download Line Drawing]({temp_file.name})", unsafe_allow_html=True)
+if col4.button("Download Line Drawing"):
+    line_drawing_pil = Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
+    line_drawing_bytes = io.BytesIO()
+    line_drawing_pil.save(line_drawing_bytes, format="PNG")
+    line_drawing_bytes.seek(0)
+    col4.download_button("Download Line Drawing", line_drawing_bytes, "line_drawing.png")
 else:
-    col3.write("Please take a selfie.")
+    col3.write("")
     col4.write("Line drawing will be displayed here.")
